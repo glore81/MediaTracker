@@ -1,6 +1,9 @@
 package com.aldiyar.media_tracker.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Entity
@@ -11,18 +14,24 @@ public class MediaItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Название не может быть пустым")
     @Column(nullable = false)
     private String title;
 
+    @NotNull(message = "Тип контента обязателен (MOVIE, SERIES, ANIME)")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private MediaType type;
 
+    @NotNull(message = "Статус просмотра обязателен")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private WatchStatus status;
 
+    @Min(value = 0, message = "Количество просмотренных серий не может быть отрицательным")
     private Integer episodesWatched;
+
+    @Min(value = 1, message = "Общее количество серий должно быть больше 0")
     private Integer totalEpisodes;
 
     @Column(length = 1000)
