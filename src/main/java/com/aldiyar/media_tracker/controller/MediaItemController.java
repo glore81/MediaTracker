@@ -1,8 +1,10 @@
 package com.aldiyar.media_tracker.controller;
 
+import com.aldiyar.media_tracker.dto.ExternalSearchResult;
 import com.aldiyar.media_tracker.model.MediaItem;
 import com.aldiyar.media_tracker.model.MediaType;
 import com.aldiyar.media_tracker.model.WatchStatus;
+import com.aldiyar.media_tracker.service.ExternalMediaService;
 import com.aldiyar.media_tracker.service.MediaItemService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -14,9 +16,11 @@ import java.util.List;
 public class MediaItemController {
 
     private final MediaItemService service;
+    private final ExternalMediaService externalService;
 
-    public MediaItemController(MediaItemService service) {
+    public MediaItemController(MediaItemService service, ExternalMediaService externalService) {
         this.service = service;
+        this.externalService = externalService;
     }
 
     @PostMapping
@@ -53,5 +57,22 @@ public class MediaItemController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         service.delete(id);
+    }
+
+    @GetMapping("/search-external")
+    public List<ExternalSearchResult> searchExternal(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "ANIME") MediaType type
+    ) {
+        return externalService.search(query, type);
+    }
+
+    @PostMapping("/import")
+    @ResponseStatus(HttpStatus.CREATED)
+    public MediaItem importFromSearch(
+            @RequestBody ExternalSearchResult selected,
+            @RequestParam(defaultValue = "PLANNED") WatchStatus status
+    ) {
+        return externalService.importToMyList(selected, status);
     }
 }
