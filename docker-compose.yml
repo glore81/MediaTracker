@@ -10,6 +10,24 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: media-tracker-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/media_tracker
+      DB_USER: postgres
+      DB_PASSWORD: 1234
+    ports:
+      - "8080:8080"
 
 volumes:
   postgres_data:
