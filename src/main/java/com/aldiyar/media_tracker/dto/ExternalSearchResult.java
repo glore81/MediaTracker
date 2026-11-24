@@ -6,7 +6,6 @@ public record ExternalSearchResult(
         String title,
         MediaType type,
         Integer totalEpisodes,
-        Double externalScore,
         String synopsis
 ) {
 }
