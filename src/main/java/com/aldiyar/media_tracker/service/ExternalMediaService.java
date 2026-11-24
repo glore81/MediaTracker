@@ -41,9 +41,16 @@ public class ExternalMediaService {
         item.setTitle(selected.title());
         item.setType(selected.type());
         item.setStatus(status != null ? status : WatchStatus.PLANNED);
-        item.setEpisodesWatched(0);
-        item.setTotalEpisodes(selected.totalEpisodes());
         item.setNotes(selected.synopsis());
+
+        if (selected.type() == MediaType.MOVIE) {
+            item.setEpisodesWatched(null);
+            item.setTotalEpisodes(null);
+        } else {
+            item.setEpisodesWatched(0);
+            item.setTotalEpisodes(selected.totalEpisodes());
+        }
+
         return mediaItemService.create(item);
     }
 
@@ -61,23 +68,16 @@ public class ExternalMediaService {
             return response.data().stream()
                     .map(item -> {
                         KitsuAttributes attr = item.attributes();
-                        Double score = null;
-                        if (attr.averageRating() != null) {
-                            // Kitsu отдаёт рейтинг по 100-балльной шкале (например, "84.5"), переводим в 10-балльную
-                            score = Math.round(Double.parseDouble(attr.averageRating())) / 10.0;
-                        }
                         return new ExternalSearchResult(
                                 attr.canonicalTitle(),
                                 MediaType.ANIME,
                                 attr.episodeCount(),
-                                score,
                                 trimText(attr.synopsis())
                         );
                     })
                     .toList();
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Ошибка Kitsu API: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Ошибка при запросе к Kitsu API");
         }
     }
 
@@ -96,21 +96,18 @@ public class ExternalMediaService {
                     .limit(5)
                     .map(item -> {
                         TvMazeShow show = item.show();
-                        Double score = show.rating() != null ? show.rating().average() : null;
                         String cleanSummary = show.summary() != null
                                 ? show.summary().replaceAll("<[^>]*>", "") : null;
                         return new ExternalSearchResult(
                                 show.name(),
                                 type,
                                 null,
-                                score,
                                 trimText(cleanSummary)
                         );
                     })
                     .toList();
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Ошибка TVMaze API: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Ошибка при запросе к TVMaze API");
         }
     }
 
@@ -121,9 +118,8 @@ public class ExternalMediaService {
 
     private record KitsuResponse(List<KitsuItem> data) {}
     private record KitsuItem(KitsuAttributes attributes) {}
-    private record KitsuAttributes(String canonicalTitle, Integer episodeCount, String averageRating, String synopsis) {}
+    private record KitsuAttributes(String canonicalTitle, Integer episodeCount, String synopsis) {}
 
     private record TvMazeItem(TvMazeShow show) {}
-    private record TvMazeShow(String name, TvMazeRating rating, String summary) {}
-    private record TvMazeRating(Double average) {}
+    private record TvMazeShow(String name, String summary) {}
 }
